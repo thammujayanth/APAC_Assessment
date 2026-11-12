@@ -1,0 +1,212 @@
+openapi: 3.1.0
+info:
+  title: APAC Policy Overview BFF API
+  version: 1.0.0
+  description: >-
+    Draft contract based only on the confirmed endpoint list and requirements
+    in the assessment. Response status codes and response body structures are
+    not specified by the assessment and remain open for review.
+paths:
+  /api/v1/policies:
+    get:
+      operationId: listPolicies
+      description: >-
+        Lists policies with pagination, sorting, filtering, and free-text
+        search. The assessment does not specify the response structure or
+        status codes.
+      parameters:
+        - name: page
+          in: query
+          description: Page number. Pagination defaults and constraints are unspecified.
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          description: Page size. Defaults and constraints are unspecified.
+          required: false
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: >-
+            Sort field and direction, for example premiumAmount,desc.
+            Supported fields and directions are unspecified.
+          required: false
+          schema:
+            type: string
+          example: premiumAmount,desc
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/PolicyStatus'
+        - name: lineOfBusiness
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/LineOfBusiness'
+        - name: region
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Region'
+        - name: effectiveDateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: effectiveDateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: search
+          in: query
+          description: Searches policyNumber, policyholderName, and underwriter.
+          required: false
+          schema:
+            type: string
+      responses:
+        default:
+          description: >-
+            Response status codes and response body structure are not specified
+            in the assessment and remain open for review.
+
+  /api/v1/policies/{id}:
+    get:
+      operationId: getPolicyById
+      description: >-
+        Gets a single policy by ID. The policy data schema defines the ID as a
+        UUID. The assessment does not specify the response structure or status
+        codes.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/PolicyId'
+      responses:
+        default:
+          description: >-
+            Response status codes and response body structure are not specified
+            in the assessment and remain open for review.
+
+  /api/v1/policies/flag:
+    patch:
+      operationId: flagPoliciesForReview
+      description: >-
+        Bulk-flags policies for review. The request accepts an array of policy
+        IDs. The assessment does not specify the response structure or status
+        codes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PolicyId'
+      responses:
+        default:
+          description: >-
+            Response status codes and response body structure are not specified
+            in the assessment and remain open for review.
+
+  /api/v1/policies/summary:
+    get:
+      operationId: getPolicySummary
+      description: >-
+        Returns aggregated statistics: counts by status, total premium by line
+        of business, and expiring-soon count. The assessment does not specify
+        the response structure or status codes.
+      responses:
+        default:
+          description: >-
+            Response status codes and response body structure are not specified
+            in the assessment and remain open for review.
+
+components:
+  schemas:
+    PolicyId:
+      type: string
+      format: uuid
+    PolicyStatus:
+      type: string
+      enum:
+        - Active
+        - Expired
+        - Pending
+        - Cancelled
+    LineOfBusiness:
+      type: string
+      enum:
+        - Property
+        - Casualty
+        - A&H
+        - Marine
+    Currency:
+      type: string
+      enum:
+        - USD
+        - SGD
+        - HKD
+        - AUD
+        - JPY
+        - THB
+    Region:
+      type: string
+      enum:
+        - Singapore
+        - Hong Kong
+        - Australia
+        - Japan
+        - Thailand
+        - Indonesia
+        - Malaysia
+        - Philippines
+    Policy:
+      type: object
+      description: >-
+        Policy data fields and constraints from the assessment. The assessment
+        does not define which fields are required in API responses.
+      properties:
+        id:
+          $ref: '#/components/schemas/PolicyId'
+        policyNumber:
+          type: string
+          description: Unique policy number in the format POL-XXXXXX.
+        policyholderName:
+          type: string
+          description: Realistic APAC policyholder name.
+        lineOfBusiness:
+          $ref: '#/components/schemas/LineOfBusiness'
+        status:
+          $ref: '#/components/schemas/PolicyStatus'
+        premiumAmount:
+          type: number
+          minimum: 1000
+          maximum: 5000000
+        currency:
+          $ref: '#/components/schemas/Currency'
+        effectiveDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        region:
+          $ref: '#/components/schemas/Region'
+        underwriter:
+          type: string
+        flaggedForReview:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
