@@ -289,3 +289,31 @@ The user approved the proposed OpenAPI completion as the contract basis before i
 - `.\mvnw.cmd '-Dtest=PolicyServiceTest,PolicyControllerTest' test` then passed: 12 tests, 0 failures, 0 errors.
 - Tests cover endpoint routing/query binding, response serialization, validation/problem response content type, pagination/sorting, date-range rejection, bulk-flag duplicates/missing IDs/idempotent counts, and summary aggregation/window.
 - No SQL Server-backed repository test or full application-context test was run.
+
+## 2026-11-12 — Application logging
+
+### 1. My prompt
+
+“Implement application logging across the policy management backend using SLF4J.”
+
+### 2. AI analysis
+
+- Spring Boot already provides SLF4J and the exception handler already uses it for database and unexpected failures, so no additional dependency or logging framework is needed.
+- Add operational logs for completed policy service operations and rejected client requests, with database/unexpected failure logs retaining the exception stack trace.
+- Avoid logging policy identifiers, search text, request bodies, or SQL statements.
+
+### 3. Implementation
+
+- Added SLF4J operation logs for policy listing, detail retrieval, review flag updates, and summary generation, recording only aggregate counts/page metrics.
+- Added warning logs for bad requests, not-found responses, validation failures, and malformed requests, containing only category and HTTP method.
+- Added HTTP method context to existing database and unexpected failure logs while preserving server-side exception details.
+
+### 4. Decisions
+
+- Used SLF4J `LoggerFactory` directly, matching the existing exception handler and avoiding an unnecessary dependency or logging configuration change.
+- Did not log client-provided policy IDs, search terms, or request-body values.
+
+### 5. Verification
+
+- `.\mvnw.cmd '-Dtest=PolicyServiceTest,PolicyControllerTest' test` passed: 12 tests, 0 failures, 0 errors.
+- Removed raw request paths from error logs after test output showed that a detail 404 path contains a policy UUID. Logs avoid policy IDs, search text, and request-body contents.

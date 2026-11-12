@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -36,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PolicyService {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(PolicyService.class);
 	private static final int EXPIRING_SOON_WINDOW_DAYS = 30;
 	private static final Set<String> REGIONS = Set.of(
 			"Singapore", "Hong Kong", "Australia", "Japan",
@@ -59,6 +62,13 @@ public class PolicyService {
 				specification,
 				PageRequest.of(query.page(), query.size(), sort));
 
+		LOGGER.info(
+				"Policy list completed: page={}, size={}, returned={}, total={}",
+				policies.getNumber(),
+				policies.getSize(),
+				policies.getNumberOfElements(),
+				policies.getTotalElements());
+
 		return new PolicyPageDto(
 				policies.getContent().stream().map(this::toDto).toList(),
 				policies.getNumber(),
@@ -71,6 +81,7 @@ public class PolicyService {
 	public PolicyDto getPolicy(UUID id) {
 		Policy policy = policyRepository.findById(id)
 				.orElseThrow(() -> new PolicyNotFoundException("Policy was not found."));
+		LOGGER.info("Policy detail retrieved.");
 		return toDto(policy);
 	}
 
@@ -105,6 +116,12 @@ public class PolicyService {
 			policyRepository.saveAll(changedPolicies);
 		}
 
+		LOGGER.info(
+				"Policy review flag operation completed: requested={}, updated={}, alreadyFlagged={}",
+				policyIds.size(),
+				changedPolicies.size(),
+				alreadyFlaggedCount);
+
 		return new FlagPoliciesResultDto(
 				policyIds.size(),
 				changedPolicies.size(),
@@ -129,6 +146,12 @@ public class PolicyService {
 				PolicyStatus.ACTIVE,
 				asOfDate,
 				asOfDate.plusDays(EXPIRING_SOON_WINDOW_DAYS));
+
+		LOGGER.info(
+				"Policy summary generated: statusGroups={}, premiumGroups={}, expiringSoon={}",
+				countsByStatus.size(),
+				premiumTotals.size(),
+				expiringSoonCount);
 
 		return new PolicySummaryDto(
 				countsByStatus,

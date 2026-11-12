@@ -27,6 +27,7 @@ public class ApiExceptionHandler {
 	public ResponseEntity<ProblemDto> handleBadRequest(
 			BadRequestException exception,
 			HttpServletRequest request) {
+		logClientError("bad_request", request);
 		return problem(HttpStatus.BAD_REQUEST, exception.getMessage(), request, List.of());
 	}
 
@@ -34,6 +35,7 @@ public class ApiExceptionHandler {
 	public ResponseEntity<ProblemDto> handleNotFound(
 			PolicyNotFoundException exception,
 			HttpServletRequest request) {
+		logClientError("not_found", request);
 		return problem(HttpStatus.NOT_FOUND, exception.getMessage(), request, List.of());
 	}
 
@@ -50,6 +52,7 @@ public class ApiExceptionHandler {
 						.map(error -> new ProblemFieldErrorDto(error.getField(), error.getDefaultMessage()))
 						.toList()
 				: List.of();
+		logClientError("validation_failed", request);
 		return problem(HttpStatus.BAD_REQUEST, "Request validation failed.", request, errors);
 	}
 
@@ -63,6 +66,7 @@ public class ApiExceptionHandler {
 		String detail = exception instanceof MethodArgumentTypeMismatchException mismatch
 				? "Invalid value for parameter '" + mismatch.getName() + "'."
 				: "The request body is missing or malformed.";
+		logClientError("malformed_request", request);
 		return problem(HttpStatus.BAD_REQUEST, detail, request, List.of());
 	}
 
@@ -70,7 +74,10 @@ public class ApiExceptionHandler {
 	public ResponseEntity<ProblemDto> handleDataAccess(
 			DataAccessException exception,
 			HttpServletRequest request) {
-		LOGGER.error("Database request failed.", exception);
+		LOGGER.error(
+				"Database request failed: method={}",
+				request.getMethod(),
+				exception);
 		return problem(
 				HttpStatus.SERVICE_UNAVAILABLE,
 				"The policy data service is temporarily unavailable.",
@@ -82,7 +89,10 @@ public class ApiExceptionHandler {
 	public ResponseEntity<ProblemDto> handleUnexpected(
 			Exception exception,
 			HttpServletRequest request) {
-		LOGGER.error("Unexpected request failure.", exception);
+		LOGGER.error(
+				"Unexpected request failure: method={}",
+				request.getMethod(),
+				exception);
 		return problem(
 				HttpStatus.INTERNAL_SERVER_ERROR,
 				"An unexpected server error occurred.",
@@ -105,5 +115,12 @@ public class ApiExceptionHandler {
 		return ResponseEntity.status(status)
 				.contentType(MediaType.APPLICATION_PROBLEM_JSON)
 				.body(body);
+	}
+
+	private void logClientError(String category, HttpServletRequest request) {
+		LOGGER.warn(
+				"Policy request rejected: category={} method={}",
+				category,
+				request.getMethod());
 	}
 }

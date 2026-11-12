@@ -221,6 +221,13 @@ Health checks are a required cross-cutting concern, but no health-check route is
 - Error responses follow the approved Problem Details shape; database access failures are logged and returned as 503, and unexpected failures are logged and returned as 500.
 - Targeted Maven Wrapper tests passed: 12 tests, no failures or errors. No SQL Server-backed test or full application-context test was run.
 
+### 2026-11-12 — Application logging
+
+- Added SLF4J logs for successful policy service operations, capturing only aggregate counts and pagination metrics.
+- Added warning logs for client-side errors and enriched database/unexpected error logs with HTTP method.
+- Kept request contents and policy identifiers out of logs. Reused the existing Spring Boot SLF4J dependency; no dependency or logging configuration changes were needed.
+- `.\mvnw.cmd '-Dtest=PolicyServiceTest,PolicyControllerTest' test` passed: 12 tests, no failures or errors.
+
 ### 2026-11-12 — Controller/service contract clarification
 
 - User requested Controller and Service implementation based on the assessment and OpenAPI. Re-read the current OpenAPI and code; the response and error contracts are still unspecified.
