@@ -213,6 +213,21 @@ Health checks are a required cross-cutting concern, but no health-check route is
 - Deferred DTO response details and exception mappings because the approved OpenAPI draft does not define response or error schemas/status codes.
 - No application code was changed and no Maven commands or tests were run.
 
+### 2026-11-12 — Controller and service implementation
+
+- User approved the proposed OpenAPI response/error contract and behavior details before implementation.
+- Finalized `docs/openapi.yaml` for the four assessment endpoints only.
+- Implemented the controller and service flows for policy listing/search/filter/sort/pagination, detail lookup, atomic review flagging, and summary aggregation. Added repository specifications/projections, response DTOs, validation/error mapping, and focused tests.
+- Error responses follow the approved Problem Details shape; database access failures are logged and returned as 503, and unexpected failures are logged and returned as 500.
+- Targeted Maven Wrapper tests passed: 12 tests, no failures or errors. No SQL Server-backed test or full application-context test was run.
+
+### 2026-11-12 — Controller/service contract clarification
+
+- User requested Controller and Service implementation based on the assessment and OpenAPI. Re-read the current OpenAPI and code; the response and error contracts are still unspecified.
+- Asked how to resolve the missing response/business semantics. User selected a proposed OpenAPI completion for review before implementation.
+- Updated `docs/openapi.yaml` with review-only response/body/status/behavior proposals marked `pending-user-approval`; retained exactly the four required API paths.
+- No Java code, tests, or Maven commands were changed/run. Static checks confirmed the four paths and proposal marker; a YAML parser was unavailable.
+
 ### 2026-11-12 — Layer scaffolding created
 
 - Created initial Java classes under `com.apac.assessment` for controller, request/response DTOs, entity, enums with JSON/JPA value mapping, exception advice, repository, and service.

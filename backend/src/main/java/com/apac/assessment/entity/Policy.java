@@ -22,6 +22,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "policies", schema = "dbo")
@@ -39,6 +40,7 @@ public class Policy {
 	@Column(name = "policy_number", nullable = false, length = 10)
 	private String policyNumber;
 
+	@Nationalized
 	@Column(name = "policyholder_name", nullable = false, length = 255)
 	private String policyholderName;
 
@@ -53,7 +55,7 @@ public class Policy {
 	@Column(name = "premium_amount", nullable = false, precision = 19, scale = 2)
 	private BigDecimal premiumAmount;
 
-	@Column(name = "currency", nullable = false, length = 3)
+	@Column(name = "currency", nullable = false, columnDefinition = "char(3)")
 	private String currency;
 
 	@Column(name = "effective_date", nullable = false)
@@ -62,9 +64,11 @@ public class Policy {
 	@Column(name = "expiry_date", nullable = false)
 	private LocalDate expiryDate;
 
+	@Nationalized
 	@Column(name = "region", nullable = false, length = 50)
 	private String region;
 
+	@Nationalized
 	@Column(name = "underwriter", nullable = false, length = 255)
 	private String underwriter;
 

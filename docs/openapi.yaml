@@ -3,38 +3,46 @@ info:
   title: APAC Policy Overview BFF API
   version: 1.0.0
   description: >-
-    Draft contract based only on the confirmed endpoint list and requirements
-    in the assessment. Response status codes and response body structures are
-    not specified by the assessment and remain open for review.
+    Approved contract for the assessment-defined policy endpoints.
+x-contract-status: approved
 paths:
   /api/v1/policies:
     get:
       operationId: listPolicies
       description: >-
-        Lists policies with pagination, sorting, filtering, and free-text
-        search. The assessment does not specify the response structure or
-        status codes.
+        Assessment requirement: list policies with pagination, sorting,
+        filtering, and free-text search. Contract semantics: page is zero-based;
+        effective date bounds are inclusive; search is case-insensitive partial
+        matching.
       parameters:
         - name: page
           in: query
-          description: Page number. Pagination defaults and constraints are unspecified.
+          description: Zero-based page number; default 0.
           required: false
           schema:
             type: integer
+            minimum: 0
+            default: 0
         - name: size
           in: query
-          description: Page size. Defaults and constraints are unspecified.
+          description: Page size; default 20 and maximum 100.
           required: false
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
         - name: sort
           in: query
           description: >-
-            Sort field and direction, for example premiumAmount,desc.
-            Supported fields and directions are unspecified.
+            Field and direction from the approved allowlist; default is
+            policyNumber,asc. The assessment example premiumAmount,desc is
+            supported.
           required: false
           schema:
             type: string
+            pattern: '^(policyNumber|policyholderName|lineOfBusiness|status|premiumAmount|currency|effectiveDate|expiryDate|region|underwriter|createdAt|updatedAt),(asc|desc)$'
+            default: policyNumber,asc
           example: premiumAmount,desc
         - name: status
           in: query
@@ -53,35 +61,45 @@ paths:
             $ref: '#/components/schemas/Region'
         - name: effectiveDateFrom
           in: query
+          description: Inclusive lower bound; must not be after effectiveDateTo.
           required: false
           schema:
             type: string
             format: date
         - name: effectiveDateTo
           in: query
+          description: Inclusive upper bound.
           required: false
           schema:
             type: string
             format: date
         - name: search
           in: query
-          description: Searches policyNumber, policyholderName, and underwriter.
+          description: >-
+            Searches policyNumber, policyholderName, and underwriter;
+            matching is case-insensitive and partial.
           required: false
           schema:
             type: string
       responses:
-        default:
-          description: >-
-            Response status codes and response body structure are not specified
-            in the assessment and remain open for review.
+        '200':
+          description: Policies matching the supplied criteria.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /api/v1/policies/{id}:
     get:
       operationId: getPolicyById
       description: >-
-        Gets a single policy by ID. The policy data schema defines the ID as a
-        UUID. The assessment does not specify the response structure or status
-        codes.
+        Gets a single policy by UUID.
       parameters:
         - name: id
           in: path
@@ -89,46 +107,106 @@ paths:
           schema:
             $ref: '#/components/schemas/PolicyId'
       responses:
-        default:
-          description: >-
-            Response status codes and response body structure are not specified
-            in the assessment and remain open for review.
+        '200':
+          description: The requested policy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /api/v1/policies/flag:
     patch:
       operationId: flagPoliciesForReview
       description: >-
-        Bulk-flags policies for review. The request accepts an array of policy
-        IDs. The assessment does not specify the response structure or status
-        codes.
+        Bulk-flags policies for review. All IDs are updated atomically;
+        already-flagged policies are unchanged; if any ID does not exist, no
+        policies are changed.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: array
+              minItems: 1
+              maxItems: 1000
+              uniqueItems: true
               items:
                 $ref: '#/components/schemas/PolicyId'
       responses:
-        default:
-          description: >-
-            Response status codes and response body structure are not specified
-            in the assessment and remain open for review.
+        '200':
+          description: Number of policies requested, changed, and already flagged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagPoliciesResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: At least one policy ID was not found; no updates were made.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
   /api/v1/policies/summary:
     get:
       operationId: getPolicySummary
       description: >-
         Returns aggregated statistics: counts by status, total premium by line
-        of business, and expiring-soon count. The assessment does not specify
-        the response structure or status codes.
+        of business, and expiring-soon count. Premiums are grouped by line of
+        business and currency. Expiring soon means active policies with an
+        expiry date from the current UTC date through 30 days later, inclusive.
       responses:
-        default:
-          description: >-
-            Response status codes and response body structure are not specified
-            in the assessment and remain open for review.
+        '200':
+          description: Aggregated policy statistics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySummary'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 
 components:
+  responses:
+    BadRequest:
+      description: The request is invalid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: The requested policy was not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: An unexpected server error occurred.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: The service is temporarily unavailable.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
   schemas:
     PolicyId:
       type: string
@@ -169,15 +247,29 @@ components:
         - Philippines
     Policy:
       type: object
-      description: >-
-        Policy data fields and constraints from the assessment. The assessment
-        does not define which fields are required in API responses.
+      description: Policy fields from the assessment.
+      required:
+        - id
+        - policyNumber
+        - policyholderName
+        - lineOfBusiness
+        - status
+        - premiumAmount
+        - currency
+        - effectiveDate
+        - expiryDate
+        - region
+        - underwriter
+        - flaggedForReview
+        - createdAt
+        - updatedAt
       properties:
         id:
           $ref: '#/components/schemas/PolicyId'
         policyNumber:
           type: string
           description: Unique policy number in the format POL-XXXXXX.
+          pattern: '^POL-[0-9]{6}$'
         policyholderName:
           type: string
           description: Realistic APAC policyholder name.
@@ -210,3 +302,139 @@ components:
         updatedAt:
           type: string
           format: date-time
+    PolicyPage:
+      type: object
+      description: Paginated list response.
+      required:
+        - items
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    FlagPoliciesResult:
+      type: object
+      description: Counts for the bulk flag operation.
+      required:
+        - requestedCount
+        - updatedCount
+        - alreadyFlaggedCount
+      properties:
+        requestedCount:
+          type: integer
+          minimum: 0
+        updatedCount:
+          type: integer
+          minimum: 0
+        alreadyFlaggedCount:
+          type: integer
+          minimum: 0
+    PolicySummary:
+      type: object
+      description: Aggregated policy statistics.
+      required:
+        - countsByStatus
+        - totalPremiumByLineOfBusiness
+        - expiringSoon
+      properties:
+        countsByStatus:
+          type: object
+          required:
+            - Active
+            - Expired
+            - Pending
+            - Cancelled
+          properties:
+            Active:
+              type: integer
+              minimum: 0
+            Expired:
+              type: integer
+              minimum: 0
+            Pending:
+              type: integer
+              minimum: 0
+            Cancelled:
+              type: integer
+              minimum: 0
+        totalPremiumByLineOfBusiness:
+          type: array
+          items:
+            type: object
+            required:
+              - lineOfBusiness
+              - currency
+              - totalPremium
+            properties:
+              lineOfBusiness:
+                $ref: '#/components/schemas/LineOfBusiness'
+              currency:
+                $ref: '#/components/schemas/Currency'
+              totalPremium:
+                type: number
+                minimum: 0
+        expiringSoon:
+          type: object
+          required:
+            - count
+            - windowDays
+            - asOfDate
+          properties:
+            count:
+              type: integer
+              minimum: 0
+            windowDays:
+              type: integer
+              const: 30
+              description: Number of days in the expiring-soon window.
+            asOfDate:
+              type: string
+              format: date
+    Problem:
+      type: object
+      description: Error representation using Problem Details conventions.
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - field
+              - message
+            properties:
+              field:
+                type: string
+              message:
+                type: string

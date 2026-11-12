@@ -217,3 +217,75 @@ after implementation run the application, verify migrations execute successfully
 - Added `backend/src/main/resources/db/migration/V2__insert_sample_policies.sql`. Its SQL Server set-based insert generates exactly 200 rows across the approved `dbo.policies` columns, cycling all required statuses, lines of business, currencies, and regions with varied premiums and status-appropriate date ranges.
 - Replaced the datasource URL, username, and password values in `application.properties` with required environment-variable placeholders; credential values were not copied.
 - Followed the Maven-wrapper instruction; no Maven command was needed or run for this file-only change.
+
+## 2026-11-12 — Controller and service implementation requested
+
+### 1. My prompt
+
+“Now I want you to implement the Controller and Service layers based on the OpenAPI specification and assessment requirement, and ask me if you need any information.”
+
+### 2. AI analysis
+
+- The existing controller and service are scaffolds only; the repository exposes basic JPA operations.
+- The assessment and OpenAPI draft identify four business endpoints and request parameters, but OpenAPI responses contain only `default` descriptions and explicitly leave response structures/status codes unspecified.
+- Implementation choices that would affect the external contract remain open: list response envelope/defaults/sort validation; detail not-found and malformed-ID handling; bulk-flag atomicity, duplicates, unknown IDs, and response; summary response shape, currency aggregation, and expiring-soon definition; common error responses; and search matching semantics.
+- Contract-first implementation needs these decisions defined in OpenAPI before controller behavior is added. Do not silently choose response formats or business rules.
+
+### 3. Implementation
+
+- Re-read the current assessment, OpenAPI draft, layer scaffolding, database entity/repository, and both journals.
+- No controller or service code was changed while contract decisions are unresolved.
+
+### 4. Decisions
+
+- The user chose to review a proposed OpenAPI completion before any controller/service implementation.
+
+### 5. Verification
+
+- Confirmed `PolicyController` has no endpoint methods and `PolicyService` has no use-case methods yet.
+- Confirmed the OpenAPI draft still does not specify response schemas or status/error codes.
+- No code, tests, or Maven commands were changed/run for this request.
+
+### User choice and proposal prepared
+
+- The user authorized preparation of an OpenAPI completion proposal for review before coding.
+- Updated `docs/openapi.yaml` with proposed response schemas and status codes, while marking the contract `pending-user-approval`. The proposal does not add endpoint paths.
+- Proposed list defaults (page 0, size 20, max 100), sort allowlist/default, inclusive date filters, case-insensitive partial search, a paginated response envelope, and Problem Details errors.
+- Proposed detail 404 for unknown IDs; bulk flag all-or-nothing processing, duplicate rejection, 1–1000 IDs, count response, and 404 when any ID is unknown; summary totals grouped by currency and a 30-day active-policy expiry window.
+- These are recommendations only, not confirmed assessment requirements. No controller/service implementation has begun.
+- Static checks confirmed exactly four API paths and operations, the pending-approval marker, and no additional health endpoint. No YAML parser was available; syntax was reviewed from the file contents.
+
+## 2026-11-12 — Controller and service implementation
+
+### 1. My prompt
+
+“Now I want you to implement the Controller and Service layers based on the OpenAPI specification and assessment requirement, and ask me if you need any information.”
+
+The user approved the proposed OpenAPI completion as the contract basis before implementation.
+
+### 2. AI analysis
+
+- The assessment defines four policy endpoints and their list query parameters; the user approved the previously proposed response schemas, HTTP statuses, validation, bulk-flag semantics, currency grouping, and expiring-soon definition.
+- The implementation must use only these four endpoints and map the existing policy entity/repository, keeping SQL access in the repository and business behavior in the service.
+- SQL Server data access errors map to the approved 503 response; malformed/invalid requests map to 400; missing policy IDs map to 404; unexpected failures are logged and mapped to 500 without leaking internals.
+
+### 3. Implementation
+
+- Marked `docs/openapi.yaml` as approved and aligned its endpoint responses, schemas, statuses, and behaviors with the user-approved proposal.
+- Implemented list, detail, bulk flag, and summary handlers in `PolicyController` and use cases in `PolicyService`.
+- Added repository specifications for filters, inclusive date range, and case-insensitive partial search across policy number, policyholder name, and underwriter; added premium aggregation by line of business and currency.
+- Added paginated, flag-result, summary, and Problem Details DTOs; added bad-request/not-found exceptions and centralized error mapping.
+- Kept atomic bulk updates: validate IDs and existence before mutation, update only previously unflagged policies, and rely on the service transaction for all-or-nothing processing.
+- Added focused controller and service tests.
+
+### 4. Decisions
+
+- Applied the user-approved defaults and rules: page 0, size 20 (max 100), default sort `policyNumber,asc`, the stated sortable fields, inclusive date filtering, partial case-insensitive search, atomic bulk flagging with 1–1000 unique IDs, same-currency premium totals, and active expiry in the UTC 30-day window.
+- The OpenAPI document remains restricted to the four assessment endpoints.
+
+### 5. Verification
+
+- First focused test run found a test mock expecting one ID where the service correctly received two; corrected the test setup.
+- `.\mvnw.cmd '-Dtest=PolicyServiceTest,PolicyControllerTest' test` then passed: 12 tests, 0 failures, 0 errors.
+- Tests cover endpoint routing/query binding, response serialization, validation/problem response content type, pagination/sorting, date-range rejection, bulk-flag duplicates/missing IDs/idempotent counts, and summary aggregation/window.
+- No SQL Server-backed repository test or full application-context test was run.

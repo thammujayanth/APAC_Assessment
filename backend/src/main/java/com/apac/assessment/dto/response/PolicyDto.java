@@ -4,7 +4,7 @@ import com.apac.assessment.enums.LineOfBusiness;
 import com.apac.assessment.enums.PolicyStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record PolicyDto(
@@ -20,6 +20,6 @@ public record PolicyDto(
 		String region,
 		String underwriter,
 		boolean flaggedForReview,
-		LocalDateTime createdAt,
-		LocalDateTime updatedAt) {
+		OffsetDateTime createdAt,
+		OffsetDateTime updatedAt) {
 }
