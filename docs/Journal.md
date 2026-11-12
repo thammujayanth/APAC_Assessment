@@ -317,3 +317,56 @@ The user approved the proposed OpenAPI completion as the contract basis before i
 
 - `.\mvnw.cmd '-Dtest=PolicyServiceTest,PolicyControllerTest' test` passed: 12 tests, 0 failures, 0 errors.
 - Removed raw request paths from error logs after test output showed that a detail 404 path contains a policy UUID. Logs avoid policy IDs, search text, and request-body contents.
+
+## 2026-11-12 — Angular frontend scaffold
+
+### 1. My prompt
+
+“I have node installed in `C:\node-v24.22.2-win-x64`; now create a frontend folder and create an Angular project there.”
+
+### 2. AI analysis
+
+- The workspace contains the Spring Boot backend and docs, with no existing frontend directory.
+- Use the user's Node 24.22.2 / npm 11.19.1 installation and Angular CLI defaults to scaffold the frontend.
+
+### 3. Implementation
+
+- Created an Angular application under `frontend` using Angular CLI 22.2.6, with npm and the CLI's default standalone application setup.
+- Installed dependencies and generated the npm lockfile.
+- Left the generated starter application unchanged.
+
+### 4. Decisions
+
+- Used `--skip-git` because the workspace already has a root Git repository.
+- The initial CLI dependency install encountered an Angular patch-version resolution conflict. Re-running npm install after confirming the matching 22.2.6 package versions were available completed successfully; no force or legacy peer-dependency bypass was used.
+
+### 5. Verification
+
+- `npm install` completed successfully and reported 0 vulnerabilities. npm noted install scripts for several optional/build packages were not approved.
+- `npm run build` passed and generated the production bundle at `frontend/dist/frontend`.
+
+## 2026-11-12 — Tailwind CSS integration
+
+### 1. My prompt
+
+“Add Tailwind CSS to the Angular project.”
+
+### 2. AI analysis
+
+- The frontend is an Angular CLI application using the `@angular/build` builder and a global `src/styles.css`.
+- Use Tailwind's PostCSS integration and keep the setup compatible with the project's Angular build.
+
+### 3. Implementation
+
+- Installed `tailwindcss`, `@tailwindcss/postcss`, and `postcss` as development dependencies.
+- Added `.postcssrc.json` to configure the Tailwind PostCSS plugin and imported Tailwind from `src/styles.css`.
+
+### 4. Decisions
+
+- Used the current Tailwind v4 PostCSS integration; no legacy Tailwind config or deprecated CLI initialization was introduced.
+- No components or starter UI styles were changed.
+
+### 5. Verification
+
+- `npm run build` passed with Tailwind processed into the production stylesheet.
+- Installed versions: `tailwindcss@4.3.5`, `@tailwindcss/postcss@4.3.5`, and `postcss@8.5.32`. npm reported 0 vulnerabilities.

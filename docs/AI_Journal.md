@@ -30,20 +30,20 @@ A production-quality REST service between the dashboard frontend and downstream 
 
 #### Policy data
 
-| Field | Type / constraints |
-| --- | --- |
-| `id` | UUID primary key |
-| `policyNumber` | Unique string, format `POL-XXXXXX` |
-| `policyholderName` | String; realistic APAC names |
-| `lineOfBusiness` | `Property`, `Casualty`, `A&H`, or `Marine` |
-| `status` | `Active`, `Expired`, `Pending`, or `Cancelled` |
-| `premiumAmount` | Decimal, 1,000–5,000,000 |
-| `currency` | `USD`, `SGD`, `HKD`, `AUD`, `JPY`, or `THB` |
-| `effectiveDate`, `expiryDate` | Dates |
-| `region` | Singapore, Hong Kong, Australia, Japan, Thailand, Indonesia, Malaysia, or Philippines |
-| `underwriter` | String |
-| `flaggedForReview` | Boolean, defaults to `false` |
-| `createdAt`, `updatedAt` | Timestamps |
+| Field                         | Type / constraints                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------- |
+| `id`                          | UUID primary key                                                                      |
+| `policyNumber`                | Unique string, format `POL-XXXXXX`                                                    |
+| `policyholderName`            | String; realistic APAC names                                                          |
+| `lineOfBusiness`              | `Property`, `Casualty`, `A&H`, or `Marine`                                            |
+| `status`                      | `Active`, `Expired`, `Pending`, or `Cancelled`                                        |
+| `premiumAmount`               | Decimal, 1,000–5,000,000                                                              |
+| `currency`                    | `USD`, `SGD`, `HKD`, `AUD`, `JPY`, or `THB`                                           |
+| `effectiveDate`, `expiryDate` | Dates                                                                                 |
+| `region`                      | Singapore, Hong Kong, Australia, Japan, Thailand, Indonesia, Malaysia, or Philippines |
+| `underwriter`                 | String                                                                                |
+| `flaggedForReview`            | Boolean, defaults to `false`                                                          |
+| `createdAt`, `updatedAt`      | Timestamps                                                                            |
 
 #### Bonus
 
@@ -241,4 +241,15 @@ Health checks are a required cross-cutting concern, but no health-check route is
 - Mapped the JPA entity to the existing `dbo.policies` schema and added UTC lifecycle timestamp handling consistent with application-managed timestamps.
 - Left endpoint methods and exception mappings unimplemented because OpenAPI response/error details remain unresolved. No config package or new tests were added.
 - `.\mvnw.cmd -DskipTests package` completed successfully; main and test sources compiled and the Spring Boot JAR was packaged. Tests were skipped. Maven showed non-blocking 401 metadata warnings from optional remote repositories.
-- Asked which feature or requirement to implement next; the user cancelled the response form, so no next task was selected.
+### 2026-11-12 — Angular frontend scaffold
+
+- Created the Angular app in `frontend` with the installed Node.js 24.22.2 and npm 11.19.1, using Angular CLI 22.2.6 defaults and npm.
+- The initial CLI dependency resolution failed on an Angular patch-version conflict. Confirmed matching 22.2.6 package versions were available, then a normal `npm install` succeeded without force/legacy peer-dependency flags.
+- `npm install` reported 0 vulnerabilities; npm warned that install scripts for optional/build packages were not approved.
+- `npm run build` passed and produced `frontend/dist/frontend`. No application feature code has been added.
+
+### 2026-11-12 — Tailwind CSS integration
+
+- Added Tailwind CSS v4 to the Angular frontend with `tailwindcss`, `@tailwindcss/postcss`, and `postcss` dev dependencies.
+- Configured `.postcssrc.json` for `@tailwindcss/postcss` and imported Tailwind in `src/styles.css`.
+- The Angular production build passed and emitted a processed stylesheet. npm reported 0 vulnerabilities.
