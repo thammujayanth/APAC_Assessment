@@ -177,3 +177,46 @@ Health checks are a required cross-cutting concern, but no health-check route is
 - The scaffold contains only the generated application entry point and test skeleton; no policy API implementation or migrations were added.
 - `mvnw.cmd -DskipTests package` completed successfully. This compiled and packaged the project while skipping test execution; the generated context test requires a configured SQL Server connection.
 - Confirmed the POM contains Spring MVC dependencies and no WebFlux dependencies.
+
+### 2026-11-12 — Policy schema and Flyway migration
+
+- User request: inspect database/Flyway setup; propose required SQL Server table structure before changes; create correctly ordered Flyway migrations; avoid extra tables/columns and Hibernate schema updates; run the application to verify migrations; record progress in `docs/AI_Journal.md`.
+- Read the assessment and approved OpenAPI draft. The assessment specifies one policy record schema; the OpenAPI leaves response details open and adds no additional persistence fields.
+- Inspected backend configuration: SQL Server datasource values are environment based, Flyway dependencies are installed, and no prior migration or Flyway settings existed.
+- Presented the one-table proposal and open questions before database implementation. User approved all columns `NOT NULL`, proposed field lengths, application-managed timestamps, and only the primary key plus unique policy-number constraint/index; user reported SQL Server is configured and reachable locally.
+- Added `V1__create_policies_table.sql` with the assessment policy fields, SQL Server-native data types, key/unique constraints, and check constraints for the specified policy number format, enums, regions, and premium bounds. No seed data or additional table was included.
+- Configured Flyway to read `classpath:db/migration` and Hibernate schema mode to `validate`; no `ddl-auto=update` is used.
+- Attempted to launch the application using the Java debugger. The tool reported a Maven build failure before startup; no active debug session was created. The Problems check reported no source errors, but the available output did not identify the Maven failure cause.
+- Since the application did not start, Flyway migration execution against SQL Server remains unverified. No retry was made. The shell did not expose `SPRING_DATASOURCE_*` environment variable names, though the user indicated local SQL Server is configured.
+
+### 2026-11-12 — Sample policy migration clarification pending
+
+- User requested a `V2__insert_sample_policies.sql` migration with 200 policy rows and specified using `./mvnw` for Maven commands.
+- Workspace inspection found the actual existing migration is `V1__create_policies_table.sql` and creates `dbo.policies`; the user referenced a different V1 filename and singular table name. No seed script was written pending confirmation of the correct target.
+- The current datasource properties contain hard-coded credentials. Their values were not copied into this journal.
+- No Maven command, application launch, or database migration was run for this request.
+
+### 2026-11-12 — Seed migration created
+
+- User confirmed the V2 target is the existing `dbo.policies` schema and approved replacing datasource credentials with environment-variable placeholders.
+- Added `V2__insert_sample_policies.sql`, a SQL Server set-based seed migration producing 200 records with values matching the current V1 schema and assessment enums/ranges.
+- Externalized datasource URL, username, and password in `application.properties`; no credential values were retained in documentation.
+- Static checks confirmed 200 generated records, coverage of the required status/line/region/currency values, 200 unique policy numbers, and premium values within range.
+- No Maven command or SQL Server/Flyway execution was performed; the migration has not yet been applied to a database.
+- The user specified `./mvnw` for any Maven command.
+
+### 2026-11-12 — Backend package structure proposal
+
+- User reports the database schema migration has completed successfully.
+- Inspected the existing backend: Java 21 / Spring Boot 4.1.2 Maven project, base package `com.apac.assessment`, one application entry point, one generated context test, SQL Server datasource placeholders, Flyway V1/V2 migrations, and no policy implementation packages.
+- Proposed a layered structure covering controller, DTO, entity, enum, exception, repository, and service packages. Use `enums` because `enum` is a Java reserved word. Do not add a `config` package unless custom configuration is needed.
+- Deferred DTO response details and exception mappings because the approved OpenAPI draft does not define response or error schemas/status codes.
+- No application code was changed and no Maven commands or tests were run.
+
+### 2026-11-12 — Layer scaffolding created
+
+- Created initial Java classes under `com.apac.assessment` for controller, request/response DTOs, entity, enums with JSON/JPA value mapping, exception advice, repository, and service.
+- Mapped the JPA entity to the existing `dbo.policies` schema and added UTC lifecycle timestamp handling consistent with application-managed timestamps.
+- Left endpoint methods and exception mappings unimplemented because OpenAPI response/error details remain unresolved. No config package or new tests were added.
+- `.\mvnw.cmd -DskipTests package` completed successfully; main and test sources compiled and the Spring Boot JAR was packaged. Tests were skipped. Maven showed non-blocking 401 metadata warnings from optional remote repositories.
+- Asked which feature or requirement to implement next; the user cancelled the response form, so no next task was selected.
