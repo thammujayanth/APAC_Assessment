@@ -167,3 +167,13 @@ Health checks are a required cross-cutting concern, but no health-check route is
 - Included only the four specified business endpoints; no health-check route or other additional API was added.
 - Left unspecified response bodies, status codes, and detailed validation/business rules open rather than assuming them.
 - Updated this journal with the specification status. No backend code was changed and no tests were run.
+
+### 2026-11-12 — Spring Boot backend scaffold
+
+- After the user approved Spring Initializr, created the `backend/` Maven project with Java 21 and Spring Boot 4.1.2 using group ID `com.apac.assessment` and artifact ID `apac-policy-bff`.
+- Included Spring MVC (not WebFlux), Spring Data JPA, validation, Flyway with SQL Server support, the Microsoft SQL Server JDBC driver, Lombok, and the generated Spring Boot test dependencies.
+- Added Springdoc's Spring MVC Swagger UI starter (`springdoc-openapi-starter-webmvc-ui` 3.2.0).
+- Configured SQL Server URL, username, and password through `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`; no connection values or credentials were added.
+- The scaffold contains only the generated application entry point and test skeleton; no policy API implementation or migrations were added.
+- `mvnw.cmd -DskipTests package` completed successfully. This compiled and packaged the project while skipping test execution; the generated context test requires a configured SQL Server connection.
+- Confirmed the POM contains Spring MVC dependencies and no WebFlux dependencies.
